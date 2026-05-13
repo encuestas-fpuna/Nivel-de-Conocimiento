@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Encuestas FP-UNA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+  // ── GOOGLE SHEETS API ─────────────────────────────────────────
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsgTebLgeyiDGKinXNwDvj7zz3--PM3TTRg__99W8MN23oiUUGYLTrDjovDTAPJo2KgA/exec";
+
+  // ── DATOS EXTRAÍDOS DE TU TABLA EXCEL ────────────────────────
+  const CARRERAS = ["LCI","LGH","IAE","ICM","IE","IEK","IEN","IIN","IMK","ISP","LCA","LCIK","LEL"];
+  const ANOS     = ["2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
+
+  // Meta total, F total, M total y desglose F/M por año para cada carrera
+  const META_DATA = {
+    LCI:  { total:3,  fTotal:2,  mTotal:1,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:1,2018:0,2019:0,2020:0,2021:0,2022:0,2023:0,2024:1,2025:0},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:0,2022:0,2023:0,2024:0,2025:1} },
+    LGH:  { total:15, fTotal:13, mTotal:2,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:2,2022:2,2023:3,2024:3,2025:2},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:0,2022:0,2023:1,2024:1,2025:0} },
+    IAE:  { total:19, fTotal:6,  mTotal:13,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:1,2022:1,2023:1,2024:1,2025:1},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:1,2019:1,2020:2,2021:2,2022:1,2023:2,2024:2,2025:2} },
+    ICM:  { total:6,  fTotal:3,  mTotal:3,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:1,2022:0,2023:1,2024:0,2025:1},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:1,2022:0,2023:0,2024:0,2025:1} },
+    IE:   { total:61, fTotal:10, mTotal:51,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:2,2022:1,2023:1,2024:2,2025:3},
+      my:{2010:0,2011:0,2012:0,2013:1,2014:1,2015:1,2016:1,2017:2,2018:3,2019:3,2020:4,2021:7,2022:5,2023:8,2024:7,2025:8} },
+    IEK:  { total:57, fTotal:10, mTotal:47,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:1,2020:1,2021:1,2022:2,2023:2,2024:1,2025:2},
+      my:{2010:0,2011:1,2012:0,2013:1,2014:1,2015:1,2016:1,2017:2,2018:1,2019:3,2020:4,2021:8,2022:5,2023:6,2024:7,2025:8} },
+    IEN:  { total:19, fTotal:6,  mTotal:13,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:1,2020:1,2021:1,2022:0,2023:1,2024:1,2025:1},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:1,2019:1,2020:2,2021:2,2022:1,2023:1,2024:2,2025:3} },
+    IIN:  { total:59, fTotal:12, mTotal:47,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:1,2019:0,2020:1,2021:2,2022:2,2023:1,2024:2,2025:3},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:1,2016:1,2017:1,2018:1,2019:1,2020:3,2021:5,2022:8,2023:8,2024:9,2025:9} },
+    IMK:  { total:16, fTotal:9,  mTotal:7,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:1,2020:0,2021:2,2022:1,2023:1,2024:2,2025:2},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:1,2022:1,2023:1,2024:1,2025:2} },
+    ISP:  { total:15, fTotal:9,  mTotal:6,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:1,2021:1,2022:1,2023:1,2024:3,2025:2},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:1,2022:1,2023:1,2024:1,2025:2} },
+    LCA:  { total:4,  fTotal:1,  mTotal:3,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:0,2022:0,2023:0,2024:0,2025:1},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:1,2022:1,2023:0,2024:0,2025:1} },
+    LCIK: { total:65, fTotal:16, mTotal:49,
+      fy:{2010:0,2011:0,2012:0,2013:1,2014:0,2015:1,2016:0,2017:0,2018:1,2019:1,2020:1,2021:2,2022:1,2023:2,2024:3,2025:3},
+      my:{2010:0,2011:0,2012:1,2013:1,2014:2,2015:1,2016:1,2017:2,2018:3,2019:3,2020:5,2021:4,2022:2,2023:6,2024:11,2025:9} },
+    LEL:  { total:16, fTotal:2,  mTotal:14,
+      fy:{2010:0,2011:0,2012:0,2013:0,2014:0,2015:0,2016:0,2017:0,2018:0,2019:0,2020:0,2021:1,2022:0,2023:0,2024:0,2025:1},
+      my:{2010:0,2011:0,2012:0,2013:0,2014:1,2015:0,2016:1,2017:1,2018:1,2019:1,2020:1,2021:2,2022:1,2023:1,2024:1,2025:3} }
+  };
+
+  let allRecords = [];
+  let filtroCarrera = "TODAS", filtroAno = "TODOS", filtroSexo = "TODOS";
+  let expandedCards = new Set();
+
+  // ── GOOGLE SHEETS: CARGAR DATOS ───────────────────────────────
+  async function cargarDatos() {
+    try {
+      const res = await fetch(SCRIPT_URL);
+      const rows = await res.json();
+      // fila 0 es encabezado, desde fila 1 son datos
+      allRecords = rows.slice(1).map((r, i) => ({
+        id: i,
+        timestamp: r[0],
+        carrera:   r[1],
+        ano:       String(r[2]),
+        sexo:      r[3],
+        encuestador: r[4]
+      })).filter(r => r.carrera);
+      renderAll();
+      setStatus(true);
+    } catch(e) {
+      setStatus(false);
+    }
+  }
+
+  // Cargar al inicio y cada 15 segundos
+  cargarDatos();
+  setInterval(cargarDatos, 15000);
+
+  function setStatus(on) {
+    const el = document.getElementById("fb-status");
+    el.textContent = on ? "● En línea" : "● Sin conexión";
+    el.className = "status "+(on?"online":"offline");
+  }
+
+  // ── AGREGAR ───────────────────────────────────────────────────
+  let _guardando = false;
+  window.agregarEncuesta = async () => {
+    if (_guardando) return; // bloqueo global anti-doble
+    const carrera=document.getElementById("sel-carrera").value;
+    const ano=document.getElementById("sel-ano").value;
+    const sexo=document.getElementById("sel-sexo").value;
+    const encuestador=document.getElementById("sel-encuestador").value;
+    if (!carrera||!ano||!sexo||!encuestador){toast("Completá todos los campos ⚠️","err");return;}
+    // ── VALIDACIÓN CONTRA META ───────────────────────────────────
+    const md = META_DATA[carrera];
+    if (!md) { toast("Carrera inválida ⚠️","err"); return; }
+    const metaAno = (sexo==="F" ? md.fy[ano] : md.my[ano]) || 0;
+    if (metaAno === 0) {
+      toast(`${carrera} ${ano} ${sexo==="F"?"♀":"♂"} — no está en la meta ✕`,"err");
+      return;
+    }
+    // Verificar contra meta usando conteo local actualizado
+    const yaHecho = allRecords.filter(r=>r.carrera===carrera&&r.ano===ano&&r.sexo===sexo).length;
+    if (yaHecho >= metaAno) {
+      toast(`${carrera} ${ano} ${sexo==="F"?"♀":"♂"} — ya completado ✓`,"err");
+      return;
+    }
+
+    _guardando = true;
+    // Registro optimista instantáneo + reset de campos
+    allRecords.push({id:-1, carrera, ano, sexo, encuestador, timestamp: new Date().toISOString()});
+    document.getElementById("sel-sexo").value="";
+    document.getElementById("sel-ano").value="";
+    document.querySelectorAll("#chips-sexo .chip, #chips-ano .chip").forEach(c=>c.classList.remove("selected"));
+    renderAll();
+
+    const btn=document.getElementById("btn-reg");
+    btn.disabled=true;btn.textContent="Guardando...";
+    try {
+      await fetch(SCRIPT_URL, {
+        method:"POST",
+        body: JSON.stringify({timestamp: new Date().toISOString(), carrera, ano, sexo, encuestador})
+      });
+      toast("✓ Registrada","ok");
+      await cargarDatos(); // esperar confirmación real de Sheets
+    } catch(e){
+      toast("Error al guardar","err");
+      allRecords = allRecords.filter(r=>r.id!==-1);
+      renderAll();
+    }
+    btn.disabled=false;btn.textContent="＋ Registrar";
+    _guardando = false; // liberar solo después de que Sheets confirmó
+  };
+
+  // ── BORRAR ────────────────────────────────────────────────────
+  window.borrarRegistro = async (rowIdx) => {
+    if (!confirm("¿Borrar este registro?")) return;
+    const removed = allRecords.find(r=>r.id===rowIdx);
+    allRecords = allRecords.filter(r=>r.id!==rowIdx);
+    renderAll();
+    try {
+      await fetch(SCRIPT_URL, {
+        method:"POST",
+        body: JSON.stringify({action:"delete", rowIndex: rowIdx+2})
+      });
+      toast("Eliminado","ok");
+      cargarDatos();
+    } catch(e){
+      toast("Error al borrar","err");
+      if (removed) allRecords.push(removed);
+      renderAll();
+    }
+  };
+
+  // ── RENDER ────────────────────────────────────────────────────
+  function renderAll() {
+    renderBanner();
+    renderMetas();
+    renderLista();
+    renderCarreraChips();
+    const carSel = document.getElementById("sel-carrera");
+    if (carSel && carSel.value) {
+      renderCarreraInfo(carSel.value);
+      renderAnosDisponibles(carSel.value, true);
+      renderSexoDisponible(carSel.value, document.getElementById("sel-ano").value);
+    }
+  }
+
+  function renderCarreraChips() {
+    CARRERAS.forEach(car => {
+      const btn = document.querySelector(`button.chip[onclick*="'${car}'"][onclick*="carrera"]`);
+      if (!btn) return;
+      const md = META_DATA[car];
+      const done = allRecords.filter(r=>r.carrera===car).length;
+      if (done >= md.total) {
+        btn.style.borderColor = "var(--grn)";
+        btn.style.color = "var(--grn)";
+      } else {
+        btn.style.borderColor = "";
+        btn.style.color = "";
+      }
+    });
+  }
+
+  function renderBanner() {
+    const tot=allRecords.length;
+    const meta=Object.values(META_DATA).reduce((a,b)=>a+b.total,0);
+    document.getElementById("total-count").textContent=tot;
+    document.getElementById("total-meta").textContent=meta;
+    document.getElementById("total-pct").textContent=Math.round(tot/meta*100)+"%";
+  }
+
+  // ── METAS con expansión por año ───────────────────────────────
+  function renderMetas() {
+    const cont = document.getElementById("tabla-metas");
+    cont.innerHTML = CARRERAS.map(car => {
+      const md   = META_DATA[car];
+      const recs = allRecords.filter(r=>r.carrera===car);
+      const done = recs.length;
+      const pct  = Math.min(100, Math.round(done/md.total*100));
+      const falt = Math.max(0, md.total-done);
+      const doneF= recs.filter(r=>r.sexo==="F").length;
+      const doneM= recs.filter(r=>r.sexo==="M").length;
+      const faltF= Math.max(0, md.fTotal-doneF);
+      const faltM= Math.max(0, md.mTotal-doneM);
+      const isExp= expandedCards.has(car);
+      const cls  = pct>=100?"completa":pct>=50?"avanzando":"";
+
+      // año rows — solo años con meta > 0
+      const anoRows = ANOS.map(ano => {
+        const mF = md.fy[ano]||0;
+        const mM = md.my[ano]||0;
+        if (mF===0 && mM===0) return "";
+        const rF = recs.filter(r=>r.ano===ano&&r.sexo==="F").length;
+        const rM = recs.filter(r=>r.ano===ano&&r.sexo==="M").length;
+        const fF = Math.max(0,mF-rF);
+        const fM = Math.max(0,mM-rM);
+        const fTot = fF+fM;
+        const rowDone = fF===0&&fM===0;
+        // Build falta detail string
+        let faltaDetail = "";
+        if (rowDone) {
+          faltaDetail = `<span class="falt-done">✓ Completo</span>`;
+        } else {
+          const parts = [];
+          if (fF>0) parts.push(`<span class="falt-f">♀ ${fF}</span>`);
+          if (fM>0) parts.push(`<span class="falt-m">♂ ${fM}</span>`);
+          faltaDetail = `<span class="falt-tot">${fTot}</span> ${parts.join(" ")}`;
+        }
+        return `
+        <tr class="ano-row ${rowDone?'row-done':''}">
+          <td class="td-ano">${ano}</td>
+          <td>${mF>0?`<span class="pill-sf">${rF}/${mF}</span>`:''}</td>
+          <td>${mM>0?`<span class="pill-sm">${rM}/${mM}</span>`:''}</td>
+          <td class="td-falt-ano ${rowDone?'done':fTot>0?'pending':''}">${faltaDetail}</td>
+        </tr>`;
+      }).join("");
+
+      return `
+      <div class="car-card ${cls}" id="card-${car}">
+        <div class="car-head" onclick="toggleCard('${car}')">
+          <div class="car-left">
+            <span class="car-tag">${car}</span>
+            <div class="car-pills">
+              <span class="pill-sf">♀ ${doneF}/${md.fTotal}</span>
+              <span class="pill-sm">♂ ${doneM}/${md.mTotal}</span>
+            </div>
+          </div>
+          <div class="car-right">
+            <span class="car-falt ${pct>=100?'done':''}">${pct>=100?"✓ Lista":"−"+falt}</span>
+            <span class="car-chevron ${isExp?'open':''}">›</span>
+          </div>
+        </div>
+        <div class="barra-wrap"><div class="barra-fill" style="width:${pct}%"></div></div>
+        <div class="car-pct-row">
+          <span class="pctlbl">${done} de ${md.total} · ${pct}%</span>
+          <span class="faltF ${faltF===0?'done':''}">${faltF===0?"♀✓":"♀−"+faltF}</span>
+          <span class="faltM ${faltM===0?'done':''}">${faltM===0?"♂✓":"♂−"+faltM}</span>
+        </div>
+        <div class="ano-expand ${isExp?'open':''}">
+          <table class="ano-table">
+            <thead><tr><th>Año</th><th class="sf">Mujeres</th><th class="sm">Hombres</th><th>Falta</th></tr></thead>
+            <tbody>${anoRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  window.toggleCard = car => {
+    if (expandedCards.has(car)) expandedCards.delete(car);
+    else expandedCards.add(car);
+    renderMetas();
+  };
+
+  // ── LISTA ─────────────────────────────────────────────────────
+  function renderLista() {
+    let recs = allRecords;
+    if (filtroCarrera!=="TODAS") recs=recs.filter(r=>r.carrera===filtroCarrera);
+    if (filtroAno!=="TODOS")     recs=recs.filter(r=>r.ano===filtroAno);
+    if (filtroSexo!=="TODOS")    recs=recs.filter(r=>r.sexo===filtroSexo);
+    const el=document.getElementById("lista-reg");
+    if (!recs.length){el.innerHTML=`<div class="empty">Sin registros ✦</div>`;return;}
+    el.innerHTML=recs.map(r=>`
+      <div class="reg-card">
+        <div class="reg-info">
+          <span class="reg-car">${r.carrera}</span>
+          <span class="reg-ano">${r.ano}</span>
+          <span class="reg-sex ${r.sexo==='F'?'sf':'sm'}">${r.sexo==='F'?'♀ Fem.':'♂ Mas.'}</span>
+          <span class="reg-enc">por ${r.encuestador}</span>
+        </div>
+        <button class="btn-del" onclick="borrarRegistro(${r.id})">✕</button>
+      </div>`).join("");
+  }
+
+  window.setFiltroC=v=>{filtroCarrera=v;syncF();renderLista();};
+  window.setFiltroA=v=>{filtroAno=v;    syncF();renderLista();};
+  window.setFiltroS=v=>{filtroSexo=v;   syncF();renderLista();};
+
+  function syncF(){
+    document.querySelectorAll(".fchip").forEach(c=>{
+      c.classList.toggle("active",[filtroCarrera,filtroAno,filtroSexo].includes(c.dataset.val));
+    });
+  }
+
+  // ── TABS ──────────────────────────────────────────────────────
+  window.showTab = tab => {
+    document.querySelectorAll(".tc,.tab-btn").forEach(e=>e.classList.remove("active"));
+    document.getElementById("tab-"+tab).classList.add("active");
+    document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add("active");
+  };
+
+  // ── TOAST ─────────────────────────────────────────────────────
+  function toast(msg,tipo){
+    const t=document.getElementById("toast");
+    t.textContent=msg;t.className="toast show "+tipo;
+    clearTimeout(t._t);t._t=setTimeout(()=>t.className="toast",2500);
+  }
+
+  function renderAnosDisponibles(car, preserveSelection=false) {
+    const anosEl = document.getElementById("chips-ano");
+    const anoSelEl = document.getElementById("sel-ano");
+    const prevAno = anoSelEl.value; // remember current selection
+
+    if (!preserveSelection) {
+      // Clear current year selection only when carrera changes
+      anoSelEl.value = "";
+      document.querySelectorAll("#chips-ano .chip").forEach(c=>c.classList.remove("selected"));
+    }
+
+    if (!car || !META_DATA[car]) {
+      // Show all años if no carrera selected
+      anosEl.innerHTML = ANOS.map(a=>
+        `<button class="chip" onclick="selectChip('ano','${a}',this)">${a}</button>`
+      ).join("");
+      return;
+    }
+
+    const md = META_DATA[car];
+    const recs = allRecords.filter(r=>r.carrera===car);
+
+    // Only show años that have meta > 0 AND are not fully completed
+    const anosDisp = ANOS.filter(ano => {
+      const mF = md.fy[ano]||0;
+      const mM = md.my[ano]||0;
+      if (mF===0 && mM===0) return false; // no meta for this year
+      const rF = recs.filter(r=>r.ano===ano&&r.sexo==="F").length;
+      const rM = recs.filter(r=>r.ano===ano&&r.sexo==="M").length;
+      const fF = Math.max(0, mF-rF);
+      const fM = Math.max(0, mM-rM);
+      return (fF+fM) > 0; // still has quota left
+    });
+
+    if (anosDisp.length === 0) {
+      anosEl.innerHTML = `<span style="font-size:12px;color:var(--grn)">✓ Todos los años completos</span>`;
+    } else {
+      anosEl.innerHTML = anosDisp.map(a=>
+        `<button class="chip" onclick="selectChip('ano','${a}',this)">${a}</button>`
+      ).join("");
+      // Restore selection if still available
+      if (preserveSelection && prevAno) {
+        const btn = anosEl.querySelector(`button.chip[onclick*="'${prevAno}'"]`);
+        if (btn) { btn.classList.add("selected"); anoSelEl.value = prevAno; }
+      }
+    }
+  }
+
+  function renderSexoDisponible(car, ano) {
+    const btnF = document.querySelector("#chips-sexo .chip.sf");
+    const btnM = document.querySelector("#chips-sexo .chip.sm");
+    if (!btnF || !btnM) return;
+
+    if (!car || !ano || !META_DATA[car]) {
+      // No carrera/año selected — show both enabled
+      [btnF, btnM].forEach(b => { b.disabled=false; b.style.opacity="1"; b.style.pointerEvents=""; });
+      return;
+    }
+
+    const md   = META_DATA[car];
+    const recs = allRecords.filter(r=>r.carrera===car&&r.ano===ano);
+    const mF   = md.fy[ano]||0;
+    const mM   = md.my[ano]||0;
+    const rF   = recs.filter(r=>r.sexo==="F").length;
+    const rM   = recs.filter(r=>r.sexo==="M").length;
+    const doneF = mF===0 || rF>=mF;
+    const doneM = mM===0 || rM>=mM;
+
+    btnF.disabled = doneF;
+    btnF.style.opacity = doneF ? "0.35" : "1";
+    btnF.style.pointerEvents = doneF ? "none" : "";
+    // if was selected and now done, deselect
+    if (doneF && document.getElementById("sel-sexo").value==="F") {
+      btnF.classList.remove("selected");
+      document.getElementById("sel-sexo").value="";
+    }
+
+    btnM.disabled = doneM;
+    btnM.style.opacity = doneM ? "0.35" : "1";
+    btnM.style.pointerEvents = doneM ? "none" : "";
+    if (doneM && document.getElementById("sel-sexo").value==="M") {
+      btnM.classList.remove("selected");
+      document.getElementById("sel-sexo").value="";
+    }
+  }
+
+  window.selectChip=(field,value,el)=>{
+    el.closest(".chip-group").querySelectorAll(".chip").forEach(c=>c.classList.remove("selected"));
+    el.classList.add("selected");
+    document.getElementById("sel-"+field).value=value;
+    if (field==="carrera") {
+      renderCarreraInfo(value);
+      renderAnosDisponibles(value);
+      // Reset sexo when carrera changes
+      document.getElementById("sel-sexo").value="";
+      document.querySelectorAll("#chips-sexo .chip").forEach(c=>c.classList.remove("selected"));
+      renderSexoDisponible(value, document.getElementById("sel-ano").value);
+    }
+    if (field==="ano") {
+      renderSexoDisponible(document.getElementById("sel-carrera").value, value);
+    }
+  };
+
+  function renderCarreraInfo(car) {
+    const panel = document.getElementById("carrera-info");
+    const body  = document.getElementById("carrera-info-body");
+    if (!car || !META_DATA[car]) { panel.style.display="none"; return; }
+    const md   = META_DATA[car];
+    const recs = allRecords.filter(r=>r.carrera===car);
+    const done = recs.length;
+    const pct  = Math.min(100, Math.round(done/md.total*100));
+    const falt = Math.max(0, md.total-done);
+    const doneF= recs.filter(r=>r.sexo==="F").length;
+    const doneM= recs.filter(r=>r.sexo==="M").length;
+    const faltF= Math.max(0, md.fTotal-doneF);
+    const faltM= Math.max(0, md.mTotal-doneM);
+    const cls  = pct>=100?"completa":pct>=50?"avanzando":"";
+
+    const anoRows = ANOS.map(ano => {
+      const mF = md.fy[ano]||0;
+      const mM = md.my[ano]||0;
+      if (mF===0 && mM===0) return "";
+      const rF = recs.filter(r=>r.ano===ano&&r.sexo==="F").length;
+      const rM = recs.filter(r=>r.ano===ano&&r.sexo==="M").length;
+      const fF = Math.max(0,mF-rF);
+      const fM = Math.max(0,mM-rM);
+      const fTot = fF+fM;
+      const rowDone = fF===0&&fM===0;
+      let faltaDetail = "";
+      if (rowDone) {
+        faltaDetail = `<span class="falt-done">✓</span>`;
+      } else {
+        const parts = [];
+        if (fF>0) parts.push(`<span class="falt-f">♀ ${fF}</span>`);
+        if (fM>0) parts.push(`<span class="falt-m">♂ ${fM}</span>`);
+        faltaDetail = `<span class="falt-tot">${fTot}</span> ${parts.join(" ")}`;
+      }
+      return `<tr class="ano-row ${rowDone?"row-done":""}">
+        <td class="td-ano">${ano}</td>
+        <td>${mF>0?`<span class="pill-sf">${rF}/${mF}</span>`:""}</td>
+        <td>${mM>0?`<span class="pill-sm">${rM}/${mM}</span>`:""}</td>
+        <td class="td-falt-ano ${rowDone?"done":fTot>0?"pending":""}">${faltaDetail}</td>
+      </tr>`;
+    }).join("");
+
+    body.innerHTML = `
+      <div style="background:var(--s2);border-radius:10px;overflow:hidden;border:1px solid #fff1">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="pill-sf">♀ ${doneF}/${md.fTotal}</span>
+            <span class="pill-sm">♂ ${doneM}/${md.mTotal}</span>
+          </div>
+          <span style="font-size:12px;font-family:var(--mono);color:${pct>=100?"var(--grn)":"var(--mut)"}">${pct>=100?"✓ Lista":"−"+falt+" ("+pct+"%)"}</span>
+        </div>
+        <div class="barra-wrap" style="margin:4px 12px"><div class="barra-fill ${cls}" style="width:${pct}%"></div></div>
+        <table class="ano-table" style="margin-top:4px">
+          <thead><tr><th>Año</th><th class="sf">Mujeres</th><th class="sm">Hombres</th><th>Falta</th></tr></thead>
+          <tbody>${anoRows}</tbody>
+        </table>
+      </div>`;
+    panel.style.display="block";
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────
+  window.addEventListener("DOMContentLoaded",()=>{
+    const meta=Object.values(META_DATA).reduce((a,b)=>a+b.total,0);
+    document.getElementById("total-meta").textContent=meta;
+
+    renderAnosDisponibles(null);
+
+    document.getElementById("fc").innerHTML=
+      `<button class="fchip active" data-val="TODAS" onclick="setFiltroC('TODAS')">Todas</button>`+
+      CARRERAS.map(c=>`<button class="fchip" data-val="${c}" onclick="setFiltroC('${c}')">${c}</button>`).join("");
+
+    document.getElementById("fa").innerHTML=
+      `<button class="fchip active" data-val="TODOS" onclick="setFiltroA('TODOS')">Todos</button>`+
+      ANOS.map(a=>`<button class="fchip" data-val="${a}" onclick="setFiltroA('${a}')">${a}</button>`).join("");
+  });
+</script>
+
+<style>
+:root{
+  --bg:#0f1117;--s1:#191c27;--s2:#21263a;
+  --acc:#f5c842;--red:#ff6b6b;--grn:#5dffa3;--blu:#5bc4ff;
+  --pnk:#ff9de2;--txt:#e8eaf0;--mut:#7a8099;
+  --r:14px;--font:'Space Grotesk',sans-serif;--mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:100dvh;max-width:480px;margin:0 auto;padding-bottom:100px}
+
+/* HEADER */
+.hdr{background:var(--s1);padding:16px 18px 12px;border-bottom:1px solid #fff2;position:sticky;top:0;z-index:100}
+.hdr-top{display:flex;justify-content:space-between;align-items:center}
+.hdr-title{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.hdr-title span{color:var(--acc)}
+.status{font-size:11px;font-family:var(--mono)}
+.status.online{color:var(--grn)}.status.offline{color:var(--red)}
+.hdr-sub{font-size:12px;color:var(--mut);margin-top:3px}
+
+/* BANNER */
+.banner{background:linear-gradient(135deg,#1a2040,#0f1525);border:1px solid #fff1;margin:12px 12px 0;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:14px}
+.ban-big{font-size:36px;font-weight:700;font-family:var(--mono);color:var(--acc);line-height:1}
+.ban-info{flex:1}.ban-lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+.ban-sub{font-size:13px;margin-top:2px}
+.ban-pct{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--grn);background:#5dffa318;border-radius:10px;padding:6px 10px}
+
+/* TABS */
+.tabs{display:flex;background:var(--s1);margin:12px 12px 0;border-radius:var(--r);padding:4px;gap:3px;border:1px solid #fff1}
+.tab-btn{flex:1;padding:8px 2px;border:none;border-radius:10px;background:transparent;color:var(--mut);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--acc);color:#000}
+
+.tc{display:none;padding:12px}.tc.active{display:block}
+
+/* FORM */
+.fcard{background:var(--s1);border-radius:var(--r);padding:16px;border:1px solid #fff1}
+.ftitle{font-size:12px;font-weight:700;color:var(--acc);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;color:var(--mut);margin-bottom:7px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.chip-group{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:8px 13px;border-radius:100px;border:1.5px solid #fff2;background:var(--s2);color:var(--mut);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.chip.selected{border-color:var(--acc);color:var(--acc);background:#f5c84218}
+.chip.sf.selected{border-color:var(--pnk);color:var(--pnk);background:#ff9de215}
+.chip.sm.selected{border-color:var(--blu);color:var(--blu);background:#5bc4ff15}
+.enc .chip.selected{border-color:var(--grn);color:var(--grn);background:#5dffa315}
+.anos-g .chip{padding:7px 9px;font-size:12px}
+.btn-reg{width:100%;padding:15px;background:var(--acc);color:#000;border:none;border-radius:var(--r);font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;transition:all .15s}
+.btn-reg:active{transform:scale(.98)}.btn-reg:disabled{opacity:.5;cursor:not-allowed}
+
+/* METAS CARDS */
+.car-card{background:var(--s1);border-radius:14px;margin-bottom:8px;border:1px solid #fff0;overflow:hidden;transition:border-color .2s}
+.car-card.completa{border-color:#5dffa328}.car-card.avanzando{border-color:#f5c84218}
+
+.car-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.car-left{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.car-tag{font-family:var(--mono);font-size:13px;background:var(--s2);padding:3px 8px;border-radius:6px;color:var(--acc);flex-shrink:0}
+.car-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill-sf{font-size:11px;color:var(--pnk);background:#ff9de212;border:1px solid #ff9de225;padding:2px 7px;border-radius:100px;font-family:var(--mono)}
+.pill-sm{font-size:11px;color:var(--blu);background:#5bc4ff12;border:1px solid #5bc4ff25;padding:2px 7px;border-radius:100px;font-family:var(--mono)}
+.car-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.car-falt{font-size:12px;font-family:var(--mono);color:var(--mut)}.car-falt.done{color:var(--grn);font-weight:700}
+.car-chevron{font-size:20px;color:var(--mut);transition:transform .25s;display:inline-block;line-height:1}
+.car-chevron.open{transform:rotate(90deg)}
+
+.barra-wrap{background:var(--s2);height:4px;margin:6px 14px}
+.barra-fill{height:100%;background:linear-gradient(90deg,var(--acc),#ff9a3c);transition:width .6s;border-radius:100px}
+.car-card.completa .barra-fill{background:linear-gradient(90deg,var(--grn),#3debc3)}
+
+.car-pct-row{display:flex;align-items:center;gap:8px;padding:5px 14px 10px;flex-wrap:wrap}
+.pctlbl{font-size:11px;font-family:var(--mono);color:var(--mut);margin-right:auto}
+.faltF,.faltM{font-size:11px;font-family:var(--mono);color:var(--mut)}
+.faltF.done{color:var(--pnk)}.faltM.done{color:var(--blu)}
+
+/* ANO EXPAND */
+.ano-expand{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.ano-expand.open{max-height:1000px}
+.ano-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.ano-table th{background:var(--s2);padding:5px 6px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);font-weight:600}
+.ano-table th:first-child{text-align:left;width:38px}
+.ano-table th.sf{color:var(--pnk)}.ano-table th.sm{color:var(--blu)}
+.ano-table td{padding:6px 6px;border-top:1px solid #fff08;text-align:center}
+.ano-table td:first-child{text-align:left}
+.ano-row:hover td{background:#ffffff04}
+.ano-row.row-done td{opacity:.5}
+.td-ano{font-family:var(--mono);color:var(--acc);white-space:nowrap}
+.td-falt-ano{font-family:var(--mono);font-weight:700;white-space:nowrap}
+@media(max-width:430px){
+  .ano-table{font-size:10px}
+  .ano-table th{padding:4px 3px;font-size:9px}
+  .ano-table td{padding:5px 3px}
+  .pill-sf,.pill-sm{font-size:9px;padding:2px 4px}
+  .falt-f,.falt-m{font-size:9px;padding:1px 3px}
+  .falt-tot{font-size:10px}
+  #carrera-info-body .barra-wrap{margin:4px 8px}
+}
+.td-falt-ano.done{color:var(--grn)}.td-falt-ano.pending{color:var(--red)}
+.falt-done{color:var(--grn);font-size:11px}
+.falt-tot{color:var(--red);font-size:12px;font-weight:700}
+.falt-f{color:var(--pnk);font-size:11px;background:#ff9de212;border:1px solid #ff9de230;padding:1px 5px;border-radius:6px}
+.falt-m{color:var(--blu);font-size:11px;background:#5bc4ff12;border:1px solid #5bc4ff30;padding:1px 5px;border-radius:6px}
+
+/* LISTA */
+.fwrap{margin-bottom:10px}
+.flbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.fscroll{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}
+.fscroll::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;padding:6px 11px;border-radius:100px;border:1.5px solid #fff1;background:var(--s2);color:var(--mut);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer}
+.fchip.active{border-color:var(--acc);color:var(--acc);background:#f5c84215}
+.reg-card{background:var(--s1);border-radius:10px;padding:10px 12px;margin-bottom:5px;display:flex;align-items:center;gap:8px;border:1px solid #fff0}
+.reg-info{display:flex;flex-wrap:wrap;gap:5px;flex:1;align-items:center}
+.reg-car{font-family:var(--mono);font-size:12px;color:var(--acc);background:#f5c84215;padding:2px 7px;border-radius:5px}
+.reg-ano{font-size:12px;font-family:var(--mono);color:var(--mut)}
+.reg-sex{font-size:12px}.reg-enc{font-size:11px;color:var(--mut);font-style:italic}
+.btn-del{background:#ff6b6b18;border:1px solid #ff6b6b30;color:var(--red);border-radius:8px;width:28px;height:28px;font-size:11px;cursor:pointer;flex-shrink:0}
+.empty{text-align:center;color:var(--mut);padding:40px 20px;font-size:14px}
+
+/* CONFIG */
+.cfg-card{background:var(--s1);border-radius:var(--r);padding:16px;border:1px solid #fff1;font-size:13px;line-height:1.9;color:var(--mut)}
+.cfg-card strong{color:var(--txt)}.acc-t{color:var(--acc)}.grn-t{color:var(--grn)}
+code{font-family:var(--mono);background:#fff1;padding:1px 5px;border-radius:4px;font-size:11px}
+.cfg-box{margin-top:12px;padding:12px;background:var(--s2);border-radius:10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--s2);color:var(--txt);padding:11px 20px;border-radius:100px;font-size:13px;font-weight:600;opacity:0;transition:all .22s;z-index:999;white-space:nowrap;border:1px solid #fff1;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--grn);color:var(--grn)}.toast.err{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title">Encuestas <span>FP-UNA</span></div>
+    <div id="fb-status" class="status offline">● Conectando...</div>
+  </div>
+  <div class="hdr-sub">Registro en tiempo real · 2010–2025</div>
+</div>
+
+<div class="banner">
+  <div class="ban-big" id="total-count">0</div>
+  <div class="ban-info">
+    <div class="ban-lbl">Encuestas realizadas</div>
+    <div class="ban-sub">Meta total: <strong id="total-meta">355</strong></div>
+  </div>
+  <div class="ban-pct" id="total-pct">0%</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="cargar" onclick="showTab('cargar')">＋ Cargar</button>
+  <button class="tab-btn"        data-tab="metas"  onclick="showTab('metas')">📊 Metas</button>
+  <button class="tab-btn"        data-tab="lista"  onclick="showTab('lista')">📋 Lista</button>
+  <button class="tab-btn"        data-tab="config" onclick="showTab('config')">⚙️</button>
+</div>
+
+<!-- CARGAR -->
+<div class="tc active" id="tab-cargar">
+  <div class="fcard">
+    <div class="ftitle">Nueva encuesta</div>
+    <div class="field">
+      <label>Encuestador</label>
+      <div class="chip-group enc">
+        <button class="chip" onclick="selectChip('encuestador','Mara',this)">Mara</button>
+        <button class="chip" onclick="selectChip('encuestador','Lucas',this)">Lucas</button>
+        <button class="chip" onclick="selectChip('encuestador','Paula',this)">Paula</button>
+      </div>
+      <input type="hidden" id="sel-encuestador">
+    </div>
+    <div class="field">
+      <label>Carrera</label>
+      <div class="chip-group">
+        <button class="chip" onclick="selectChip('carrera','LCI',this)">LCI</button>
+        <button class="chip" onclick="selectChip('carrera','LGH',this)">LGH</button>
+        <button class="chip" onclick="selectChip('carrera','IAE',this)">IAE</button>
+        <button class="chip" onclick="selectChip('carrera','ICM',this)">ICM</button>
+        <button class="chip" onclick="selectChip('carrera','IE',this)">IE</button>
+        <button class="chip" onclick="selectChip('carrera','IEK',this)">IEK</button>
+        <button class="chip" onclick="selectChip('carrera','IEN',this)">IEN</button>
+        <button class="chip" onclick="selectChip('carrera','IIN',this)">IIN</button>
+        <button class="chip" onclick="selectChip('carrera','IMK',this)">IMK</button>
+        <button class="chip" onclick="selectChip('carrera','ISP',this)">ISP</button>
+        <button class="chip" onclick="selectChip('carrera','LCA',this)">LCA</button>
+        <button class="chip" onclick="selectChip('carrera','LCIK',this)">LCIK</button>
+        <button class="chip" onclick="selectChip('carrera','LEL',this)">LEL</button>
+      </div>
+      <input type="hidden" id="sel-carrera">
+    </div>
+    <!-- INFO CARRERA SELECCIONADA -->
+    <div id="carrera-info" style="display:none;margin-bottom:13px">
+      <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:7px">Estado de la carrera</div>
+      <div id="carrera-info-body"></div>
+    </div>
+    <div class="field">
+      <label>Año de ingreso</label>
+      <div class="chip-group anos-g" id="chips-ano"></div>
+      <input type="hidden" id="sel-ano">
+    </div>
+    <div class="field">
+      <label>Sexo</label>
+      <div class="chip-group" id="chips-sexo">
+        <button class="chip sf" onclick="selectChip('sexo','F',this)">♀ Femenino</button>
+        <button class="chip sm" onclick="selectChip('sexo','M',this)">♂ Masculino</button>
+      </div>
+      <input type="hidden" id="sel-sexo">
+    </div>
+    <button class="btn-reg" id="btn-reg" onclick="agregarEncuesta()">＋ Registrar</button>
+  </div>
+</div>
+
+<!-- METAS -->
+<div class="tc" id="tab-metas">
+  <div style="font-size:11px;color:var(--mut);padding:0 2px 10px;letter-spacing:.5px">
+    Tocá cada carrera para ver el desglose por año ›
+  </div>
+  <div id="tabla-metas"></div>
+</div>
+
+<!-- LISTA -->
+<div class="tc" id="tab-lista">
+  <div class="fwrap"><div class="flbl">Carrera</div><div class="fscroll" id="fc"></div></div>
+  <div class="fwrap"><div class="flbl">Año</div><div class="fscroll" id="fa"></div></div>
+  <div class="fwrap">
+    <div class="flbl">Sexo</div>
+    <div class="fscroll">
+      <button class="fchip active" data-val="TODOS" onclick="setFiltroS('TODOS')">Todos</button>
+      <button class="fchip" data-val="F" onclick="setFiltroS('F')">♀ Femenino</button>
+      <button class="fchip" data-val="M" onclick="setFiltroS('M')">♂ Masculino</button>
+    </div>
+  </div>
+  <div id="lista-reg"></div>
+</div>
+
+<!-- CONFIG -->
+<div class="tc" id="tab-config">
+  <div class="cfg-card">
+    <div class="ftitle">Información</div>
+    <strong>Base de datos:</strong> Google Sheets<br>
+    <strong>Encuestadores:</strong> Lucas, Sofía, César<br>
+    <strong>Actualización:</strong> cada 15 segundos<br><br>
+    <span class="grn-t">✓ Datos en tu Drive · ✓ Funciona en celular</span>
+    <div class="cfg-box">
+      <div class="flbl" style="margin-bottom:6px">Ver los datos</div>
+      <p style="font-size:12px;color:var(--mut);line-height:1.7">Los registros se guardan en tu hoja de Google Sheets en tiempo real. Podés abrirla desde <span style="color:var(--acc)">Google Drive</span>.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</body>
+</html>
